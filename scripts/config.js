@@ -16118,15 +16118,6 @@ define('appConfig',{
 		},
 		{
 			"color": [
-				39,
-				39,
-				40
-			],
-			"id": "NonEskom_Coal",
-			"label": "Non-Eskom Coal"
-		},
-		{
-			"color": [
 				240,
 				183,
 				32
@@ -16217,15 +16208,6 @@ define('appConfig',{
 		},
 		{
 			"color": [
-				136,
-				188,
-				204
-			],
-			"id": "NonEskom_Hydro",
-			"label": "Non-Eskom Hydro"
-		},
-		{
-			"color": [
 				116,
 				80,
 				194
@@ -16244,30 +16226,32 @@ define('appConfig',{
 		},
 		{
 			"color": [
-				242,
-				165,
-				181
-			],
-			"id": "NonEskom__Gas",
-			"label": "Non-Eskom Gas"
-		},
-		{
-			"color": [
-				255,
-				255,
-				255
-			],
-			"id": "NonEskom_PumpStorage",
-			"label": "Non-Eskom Pumped Storage"
-		},
-		{
-			"color": [
 				225,
 				225,
 				225
 			],
 			"id": "PumpStorage",
 			"label": "Pumped Storage"
+		}
+	],
+	"exportTypes": [
+		{
+			"id": "exporter",
+			"color": [
+				45,
+				119,
+				185
+			],
+			"label": "Net Exporter"
+		},
+		{
+			"id": "importer",
+			"color": [
+				221,
+				35,
+				24
+			],
+			"label": "Net Importer"
 		}
 	],
 	"metrics": [
@@ -16295,7 +16279,7 @@ define('appConfig',{
 			"name": "Study Areas"
 		}
 	],
-	"initial_attribute": "interstate_flow",
+	"initial_attribute": "generation",
 	"initial_chart_attribute": "generation",
 	"initial_scenario": "test_2040",
 	"initial_scenario_2": "test_2040",
@@ -38494,9 +38478,7 @@ __p += '\n  <div class="legend-row">\n   <svg height="' +
  });
 __p += '\n  <footer class="export-import-row">\n   <label>Exporter</label>\n   <label>Importer</label>\n  </footer>\n </section>\n <section class="flow-type-legend">\n  <div class="legend-row">\n   <input type="checkbox"\n          class="flow-type-checkbox"\n          data-flowType="Interstate_AC"\n          ' +
 ((__t = ( flowExclusions.indexOf('Interstate_AC') === -1 ? 'checked' : '')) == null ? '' : __t) +
-'\n   >\n   <label for="">AC</label>\n   <svg height="10" width="60">\n    <path d="M0,5L60,5"\n          stroke-width="10"\n          class="flow-type-legend-line"\n          stroke="rgb(55,55,55)"></path>\n    <path d="M0,5L60,5" stroke-width="10"\n          class="flow-type-legend-line"\n          stroke-dasharray="2,2"\n          stroke="rgba(165,165,165,0.6)"></path>\n   </svg>\n  </div>\n  <div class="legend-row">\n   <input\n           type="checkbox"\n           class="flow-type-checkbox"\n           data-flowType="Interstate_DC"\n           ' +
-((__t = ( flowExclusions.indexOf('Interstate_DC') === -1 ? 'checked' : '')) == null ? '' : __t) +
-'\n   >\n   <label for="">DC</label>\n   <svg height="10" width="60">\n    <path d="M0,5L60,5"\n          stroke-width="10"\n          stroke-dasharray="4,4"\n          stroke="rgb(55,55,55)"\n          class="flow-type-legend-line"></path>\n   </svg>\n  </div>\n </section>\n ';
+'\n   >\n   <label for="">AC</label>\n   <svg height="10" width="60">\n    <path d="M0,5L60,5"\n          stroke-width="10"\n          class="flow-type-legend-line"\n          stroke="rgb(55,55,55)"></path>\n    <path d="M0,5L60,5" stroke-width="10"\n          class="flow-type-legend-line"\n          stroke-dasharray="2,2"\n          stroke="rgba(165,165,165,0.6)"></path>\n   </svg>\n  </div>\n </section>\n ';
  } ;
 __p += '\n</section>';
 
@@ -44593,7 +44575,7 @@ define('scripts/views/MapView',[
             } else if (currentMetric.id == 'interstate_flow') {
                 pointData = _.mapObject(Radio.request('data:scenario'), function (arr) {
                    return _.filter(arr, function (o) {
-                       return o.gid_from == d.id || o.gid_to == d.id;
+                       return o.gid_from == d.properties.name || o.gid_to == d.properties.name;
                    });
                 });
                 hasData = _.some(pointData, function (arr) {
