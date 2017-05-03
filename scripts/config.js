@@ -16279,7 +16279,7 @@ define('appConfig',{
 			"name": "Study Areas"
 		}
 	],
-	"initial_attribute": "generation",
+	"initial_attribute": "interstate_flow",
 	"initial_chart_attribute": "generation",
 	"initial_scenario": "test_2040",
 	"initial_scenario_2": "test_2040",
@@ -44177,7 +44177,7 @@ define('scripts/views/MapView',[
         },
 
         _createProjection: function () {
-            // console.log(d3)
+
             var projectionName = 'geo' + this.mapOptions.projectionOptions.id,
                 projection = d3[projectionName]();
 
@@ -44305,9 +44305,10 @@ define('scripts/views/MapView',[
                 return {
                     gid_from: value >= 0 ? o.gid_from : o.gid_to,
                     gid_to: value >= 0 ? o.gid_to : o.gid_from,
-                    value: Math.abs(o.values[temporalIdx])
+                    value: Math.abs(value)
                 }
             });
+
 
             // this.mapOptions.layers.line
             //     .selectAll('.Interstate_DC')
@@ -44337,9 +44338,14 @@ define('scripts/views/MapView',[
             //         return d.value ? lineScale(d.value) : 0;
             //     });
 
+
             this.mapOptions.layers.line
                 .selectAll('.Interstate_AC')
-                .data(acData, function (d) { return [d.gid_from, d.gid_to]; })
+                .data(acData, function (d) {
+                    var from = d.value > 0 ? d.gid_from : d.gid_to;
+                    var to = d.value > 0 ? d.gid_to : d.gid_from;
+                    return [from, to];
+                })
                 .style('stroke', function (d) {
                     var fromFeatureX = _.findWhere(features, {id: d.gid_from}).geometry.coordinates[0],
                         toFeatureX = _.findWhere(features, {id: d.gid_to}).geometry.coordinates[0];
@@ -44365,7 +44371,11 @@ define('scripts/views/MapView',[
 
             this.mapOptions.layers.line
                 .selectAll('.Interstate_AC-animation')
-                .data(acData, function (d) { return [d.gid_from, d.gid_to]; })
+                .data(acData, function (d) {
+                  var from = d.value > 0 ? d.gid_from : d.gid_to;
+                  var to = d.value > 0 ? d.gid_to : d.gid_from;
+                  return [from, to];
+                })
                 .classed('hidden', function (d) {
                     var hasConflicts = hasRenderConflicts(d);
 
@@ -44374,7 +44384,6 @@ define('scripts/views/MapView',[
                     (d.gid_to !== selectedGeography));
 
                     var typeExcluded = excludedFlowTypes.indexOf('Interstate_AC') !== -1;
-
 
                     return hasConflicts || notSelected || typeExcluded;
                 })
@@ -48832,23 +48841,28 @@ define('scripts/views/MapPopupView',[
                     var geographyData = _.reduce(arr, function (result, o) {
                                 var value = o.values[currentTemporalIdx],
                                     typeName = key == 'Interstate_AC' ?'AC' : 'DC';
-                                if (_this.data.gid == o.gid_from && value) {
+                                if (value) {
 
-                                    result.exports.push({
-                                        gid: o.gid_to,
-                                        value: value,
+                                    if (
+                                        ((_this.data.gid === o.gid_from) && (value > 0)) ||
+                                        ((_this.data.gid === o.gid_to) && (value < 0))
+                                    ) {
+                                      result.exports.push({
+                                        gid: value > 0 ? o.gid_to : o.gid_from,
+                                        value: Math.abs(value),
                                         typeName: typeName,
                                         color: 'rgb(' + _.findWhere(CONFIG.exportTypes, {id: 'exporter'}).color.join(',') + ')',
                                         strokeDasharray: key === 'Interstate_DC' ? '3,3' : ''
-                                    })
-                                } else if (value) {
-                                    result.imports.push({
-                                        gid: o.gid_from,
-                                        value: value,
+                                      })
+                                    } else {
+                                      result.imports.push({
+                                        gid: value > 0 ? o.gid_from : o.gid_to,
+                                        value: Math.abs(value),
                                         typeName: typeName,
                                         color: 'rgb(' + _.findWhere(CONFIG.exportTypes, {id: 'importer'}).color.join(',') + ')',
                                         strokeDasharray: key === 'Interstate_DC' ? '4,4' : ''
-                                    })
+                                      })
+                                    }
                                 }
                                 return result;
                             }, {imports: [], exports: []});
