@@ -16145,15 +16145,6 @@ define('appConfig',{
 		},
 		{
 			"color": [
-				200,
-				200,
-				200
-			],
-			"id": "CAES",
-			"label": "CAES"
-		},
-		{
-			"color": [
 				0,
 				127,
 				31
@@ -16169,15 +16160,6 @@ define('appConfig',{
 			],
 			"id": "Biogas",
 			"label": "Biogas"
-		},
-		{
-			"color": [
-				40,
-				168,
-				72
-			],
-			"id": "Landfill",
-			"label": "Landfill"
 		},
 		{
 			"color": [
@@ -45047,6 +45029,11 @@ define('scripts/views/DispatchStackChart',[
 
   return GenerationChart.extend({
 
+    initialize: function () {
+      GenerationChart.prototype.initialize.apply(this, arguments);
+      this._cachedTemporalIdx = Radio.request('currentTemporalIdx');
+    },
+
     createBaseSVG: function () {
 
       this.chartOptions.svg = d3.select(this.el).select('#' + this.divId).append('svg');
@@ -45141,6 +45128,9 @@ define('scripts/views/DispatchStackChart',[
       // Handle a time change
       Radio.listen(this, 'change:currentTemporalIdx', function () {
         var currentTemporalIdx = Radio.request('currentTemporalIdx');
+
+        console.log('currentTemoralIdx: ' + currentTemporalIdx);
+        console.log('_cachedTemporalIdx: ' + this._cachedTemporalIdx);
 
         // Check if the time has been incremented (via the player) or changed dramatically (more than 1 time step)
         var handler = Math.abs(currentTemporalIdx - this._cachedTemporalIdx) == 1 ? 'shiftChart' : 'renderChart';
@@ -45296,6 +45286,8 @@ define('scripts/views/DispatchStackChart',[
         }
       }
 
+      // console.log('Trimmed Data');
+      // console.log(data);
       return data;
     },
 
@@ -45307,13 +45299,22 @@ define('scripts/views/DispatchStackChart',[
           }))
           .order(d3.stackOrderNone);
 
-      return this.chartOptions.stack(rawData);
+      var data = this.chartOptions.stack(rawData);
+
+      // console.log('Stacked Data');
+      // console.log(data);
+
+      
+
+      return data;
     },
 
     _createFuelBands: function (parent, data) {
       var _this = this;
 
       var currentTemporalIdx = Radio.request('currentTemporalIdx');
+
+      parent.selectAll('.fuel-types').remove();
 
       var fuelBands = parent.selectAll('.fuel-types')
           .data(data, function (d) {
@@ -45325,6 +45326,10 @@ define('scripts/views/DispatchStackChart',[
       this.chartOptions.area = this.chartOptions.area || d3.area();
       this.chartOptions.area
           .x((d, i) => {
+        // if (i === 0) {
+        //   console.log(d.data.x);
+        //   console.log(x(d.data.x));
+        // }
             return x(d.data.x)
           })
           .y0(d => y(d[0]))
@@ -45340,14 +45345,16 @@ define('scripts/views/DispatchStackChart',[
             return 'rgb(' + _this.chartOptions.colorPalette[d.key].join(',') + ')';
           })
           .attr('d', function (d) {
+            if (d.key === 'CAES' || d.key === 'Landfill') { console.log(d)}
+            // console.log(d.key)
+            // console.log(_this.chartOptions.area(d))
             return _this.chartOptions.area(d);
           });
 
-      // console.log(data)
-      parent.selectAll('.fuel-types').each(function (d) {
-        d3.select(this).select('path')
-            .attr('d', _this.chartOptions.area(d));
-      })
+      // parent.selectAll('.fuel-types').each(function (d) {
+      //   d3.select(this).select('path')
+      //       .attr('d', _this.chartOptions.area(d));
+      // });
 
 
       return fuelBands;
@@ -45481,6 +45488,8 @@ define('scripts/views/DispatchStackChart',[
     },
 
     shiftChart: function () {
+      
+      console.log('shift chart');
 
       // TODO: Remove this to update flow chart
       // if (Radio.request('currentMetric').id != 'generation') {
@@ -45517,6 +45526,12 @@ define('scripts/views/DispatchStackChart',[
       var trimmedData = this._trimData(rawData);
       trimmedData = increasing ? trimmedData.slice(trimmedData.length - 1) : trimmedData.slice(0, 1);
 
+      // console.log(trimmedData)
+
+      // console.log('Increasing: ' + increasing);
+      // console.log(trimmedData);
+      
+
       var stackedData = this._stackData(trimmedData);
 
       // console.log(stackedData)
@@ -45531,6 +45546,11 @@ define('scripts/views/DispatchStackChart',[
           arr.unshift(newPoint);
         }
       });
+      //
+      // console.log(self.chartOptions.x.domain());
+      // console.log(self.chartOptions.x.range());
+      // console.log(-(currentTemporalIdx + 12));
+      // console.log(self.chartOptions.x(-(currentTemporalIdx + 12)));
 
       this.chartOptions.g.selectAll('.fuel-types')
           .data(this.chartOptions.data, function (d) {
@@ -45543,7 +45563,7 @@ define('scripts/views/DispatchStackChart',[
           .transition()
           .duration(transitionDuration)
           .ease(d3.easeLinear)
-          .attr('transform', 'translate(' + self.chartOptions.x(-(currentTemporalIdx + (12))) + ',0)');
+          .attr('transform', 'translate(' + self.chartOptions.x(-(currentTemporalIdx + 12)) + ',0)');
 
       // Remove extra data points
       _.each(self.chartOptions.data, function (arr) {
@@ -46233,7 +46253,7 @@ define('scripts/views/TimeChartView',[
       Radio.listen(this, 'change:chartComparison', this.reRender.bind(this))
       Radio.listen(this, 'change:clickedGeography', this.reRender.bind(this));
       Radio.listen(this, 'change:clickedGeography2', this.reRender.bind(this));
-      Radio.listen(this, 'change:currentDisplayOption', this.reRender.bind(this));
+      // Radio.listen(this, 'change:currentDisplayOption', this.reRender.bind(this));
     },
 
     _adjustSizes: function () {
@@ -49074,7 +49094,6 @@ define('scripts/views/AppLayoutView',[
         },
 
         onRender: function () {
-
             this._adjustSizes();
 
             // this.showChildView('cumulativeTable', new CumulativeTableView());
